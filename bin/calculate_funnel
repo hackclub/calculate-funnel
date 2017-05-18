@@ -8,27 +8,10 @@ require 'open3'
 require 'ruby-progressbar'
 
 require_relative '../lib/heroku'
-require_relative '../lib/website'
-require_relative '../lib/work_pool'
+require_relative '../lib/funnel/funnel'
+require_relative '../lib/funnel/cohort'
 
 THREADS = 8
-
-# Set this to the months you want to evaluate
-months = [
-  {month: 4, year: 2016},
-  {month: 5, year: 2016},
-  {month: 6, year: 2016},
-  {month: 7, year: 2016},
-  {month: 8, year: 2016},
-  {month: 9, year: 2016},
-  {month: 10, year: 2016},
-  {month: 11, year: 2016},
-  {month: 12, year: 2016},
-  {month: 1, year: 2017},
-  {month: 2, year: 2017},
-  {month: 3, year: 2017},
-  {month: 4, year: 2017}
-]
 
 # Gets user input from console, but hides what they're typing.
 #
@@ -38,40 +21,37 @@ def gets_hidden
 end
 
 unless Heroku.authed?
-  puts "Logging into Heroku..."
-  print "Email: "
-  email = gets.strip
-  print "Password: "
-  password = gets_hidden.strip
-  print "\n" # gets_hidden drops extra newline, need to print it ourselves
-
-  puts "Attempting login..."
-
-  if Heroku.login(email, password)
+  if Heroku.login_interactive
     puts "Success!"
   else
-    puts "Failed to login. Exiting."
-    exit 1
+    puts "Failed to login."
   end
 end
 
-pool = WorkPool.new(THREADS)
-semaphore = Concurrent::Semaphore.new(1)
-progress = ProgressBar.create(title: 'Fetching applications', total: months.count)
+funnel = Funnel.new(
+  Cohort.new(4, 2016),
+  Cohort.new(5, 2016),
+  Cohort.new(6, 2016),
+  Cohort.new(7, 2016),
+  Cohort.new(8, 2016),
+  Cohort.new(9, 2016),
+  Cohort.new(10, 2016),
+  Cohort.new(11, 2016),
+  Cohort.new(12, 2016),
+  Cohort.new(1, 2017),
+  Cohort.new(2, 2017),
+  Cohort.new(3, 2017),
+  Cohort.new(4, 2017)
+)
 
-months.each do |month|
-  pool.post do
-    applications = Website.applications_in_month(month[:month], month[:year])
+puts "Loading..."
+funnel.load
 
-    semaphore.acquire
-    month[:applications] = applications
-    progress.increment
-    semaphore.release
-  end
-end
+puts "Processing..."
+funnel.process
 
-pool.wait_for_completion
+puts "Rendering..."
+puts funnel.render
 
-# Shut down pool & stop progress bar
-pool.shutdown
-progress.finish
+puts "Turning off funnel..."
+funnel.shutdown

@@ -17,6 +17,23 @@ class Heroku
     )
   end
 
+  def self.login_interactive
+    puts "Logging into Heroku..."
+    print "Email: "
+    email = gets.strip
+    print "Password: "
+    password = gets_hidden.strip
+    print "\n" # gets_hidden drops extra newline, need to print it ourselves
+
+    puts "Attempting login..."
+
+    if self.login(email, password)
+      true
+    else
+      false
+    end
+  end
+
   # Runs a command in a Heroku app and returns stdout
   def self.run_cmd(cmd, app)
     stdout, _stderr, _status = Open3.capture3('heroku', 'run', cmd, '--app', app)
