@@ -1,0 +1,77 @@
+#!/usr/bin/env ruby
+
+require 'byebug'
+require 'concurrent'
+require 'io/console'
+require 'json'
+require 'open3'
+require 'ruby-progressbar'
+
+require_relative '../lib/heroku'
+require_relative '../lib/website'
+require_relative '../lib/work_pool'
+
+THREADS = 8
+
+# Set this to the months you want to evaluate
+months = [
+  {month: 4, year: 2016},
+  {month: 5, year: 2016},
+  {month: 6, year: 2016},
+  {month: 7, year: 2016},
+  {month: 8, year: 2016},
+  {month: 9, year: 2016},
+  {month: 10, year: 2016},
+  {month: 11, year: 2016},
+  {month: 12, year: 2016},
+  {month: 1, year: 2017},
+  {month: 2, year: 2017},
+  {month: 3, year: 2017},
+  {month: 4, year: 2017}
+]
+
+# Gets user input from console, but hides what they're typing.
+#
+# See http://stackoverflow.com/a/11765329 for source.
+def gets_hidden
+  STDIN.noecho(&:gets)
+end
+
+unless Heroku.authed?
+  puts "Logging into Heroku..."
+  print "Email: "
+  email = gets.strip
+  print "Password: "
+  password = gets_hidden.strip
+  print "\n" # gets_hidden drops extra newline, need to print it ourselves
+
+  puts "Attempting login..."
+
+  if Heroku.login(email, password)
+    puts "Success!"
+  else
+    puts "Failed to login. Exiting."
+    exit 1
+  end
+end
+
+pool = WorkPool.new(THREADS)
+semaphore = Concurrent::Semaphore.new(1)
+progress = ProgressBar.create(title: 'Fetching applications', total: months.count)
+
+months.each do |month|
+  pool.post do
+    applications = Website.applications_in_month(month[:month], month[:year])
+
+    semaphore.acquire
+    month[:applications] = applications
+    progress.increment
+    semaphore.release
+  end
+end
+
+pool.wait_for_completion
+
+# Shut down pool & stop progress bar
+pool.shutdown
+progress.finish

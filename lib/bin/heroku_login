@@ -1,0 +1,19 @@
+#!/usr/bin/expect
+#
+# Usage: heroku_login email password
+
+set timeout 3
+
+set email [lindex $argv 0]
+set password [lindex $argv 1]
+
+spawn heroku login
+
+# We need a one second sleeps to let Heroku's CLI process input.
+expect "Email:" { sleep 0.25; send "$email"; sleep 0.25; send "\n" }
+expect "Password:" { sleep 0.25; send "$password"; sleep 0.25; send "\n" }
+
+expect {
+  "Logged in" { exit 0 }
+  timeout { exit 1 }
+}
