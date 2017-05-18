@@ -1,3 +1,5 @@
+require 'json'
+
 class Website
   HEROKU_APP = 'website-hackclub'
 

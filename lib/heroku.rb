@@ -1,3 +1,7 @@
+require 'open3'
+
+require_relative './util'
+
 class Heroku
   # Will return false if not logged in
   def self.authed?
@@ -22,7 +26,7 @@ class Heroku
     print "Email: "
     email = gets.strip
     print "Password: "
-    password = gets_hidden.strip
+    password = Util.gets_hidden.strip
     print "\n" # gets_hidden drops extra newline, need to print it ourselves
 
     puts "Attempting login..."

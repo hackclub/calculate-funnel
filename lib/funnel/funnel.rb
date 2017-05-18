@@ -1,11 +1,13 @@
 require_relative '../work_pool.rb'
 require_relative './stages/submits_application'
 require_relative './stages/non_spam_application'
+require_relative './stages/becomes_active_club'
 
 class Funnel
   STAGES = [
     SubmitsApplication,
     NonSpamApplication,
+    BecomesActiveClub,
   ]
 
   def initialize(*cohorts)

@@ -1,24 +1,8 @@
 #!/usr/bin/env ruby
 
-require 'byebug'
-require 'concurrent'
-require 'io/console'
-require 'json'
-require 'open3'
-require 'ruby-progressbar'
-
 require_relative '../lib/heroku'
 require_relative '../lib/funnel/funnel'
 require_relative '../lib/funnel/cohort'
-
-THREADS = 8
-
-# Gets user input from console, but hides what they're typing.
-#
-# See http://stackoverflow.com/a/11765329 for source.
-def gets_hidden
-  STDIN.noecho(&:gets)
-end
 
 unless Heroku.authed?
   if Heroku.login_interactive
