@@ -3,7 +3,6 @@ require_relative './stages/submits_application'
 require_relative './stages/non_spam_application'
 
 class Funnel
-  THREAD_COUNT = 1
   STAGES = [
     SubmitsApplication,
     NonSpamApplication,
@@ -11,31 +10,22 @@ class Funnel
 
   def initialize(*cohorts)
     @cohorts = cohorts
-    @pool = WorkPool.new(THREAD_COUNT)
 
     @cohorts.each { |c| c.init_stages(STAGES) }
   end
 
   def load
     @cohorts.each do |cohort|
-      @pool.post do
-        puts "Loading #{cohort.to_s}..."
-        cohort.load
-      end
+      puts "Loading #{cohort.to_s}..."
+      cohort.load
     end
-
-    @pool.wait_for_completion
   end
 
   def process
     @cohorts.each do |cohort|
-      @pool.post do
-        puts "Processing #{cohort.to_s}..."
-        cohort.process
-      end
+      puts "Processing #{cohort.to_s}..."
+      cohort.process
     end
-
-    @pool.wait_for_completion
   end
 
   def render
@@ -52,9 +42,5 @@ class Funnel
     end
 
     arr.transpose.map { |row| row.join("\t") }.join("\n")
-  end
-
-  def shutdown
-    @pool.shutdown
   end
 end

@@ -52,6 +52,3 @@ funnel.process
 
 puts "Rendering..."
 puts funnel.render
-
-puts "Turning off funnel..."
-funnel.shutdown
